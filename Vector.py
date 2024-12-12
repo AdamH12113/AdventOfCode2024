@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing_extensions import Self
 
+# Two-dimensional vector
 @dataclass(frozen = True)
 class Vector:
 	x: int
@@ -38,6 +39,7 @@ class Vector:
 	def rotate_ccw(self) -> Self:
 		return type(self)(-self.y, self.x)
 
+# Three-dimensional vector
 @dataclass(frozen = True)
 class Vector3:
 	x: int
@@ -67,3 +69,14 @@ class Vector3:
 
 	def in_range_sq(self, size):
 		return self.in_range(0, size - 1, 0, size - 1, 0, size - 1)
+
+
+# Helpful constants
+up = Vector(0, 1)
+down = Vector(0, -1)
+left = Vector(-1, 0)
+right = Vector(1, 0)
+upleft = Vector(-1, 1)
+upright = Vector(1, 1)
+downleft = Vector(-1, -1)
+downright = Vector(1, -1)
