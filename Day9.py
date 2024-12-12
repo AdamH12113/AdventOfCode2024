@@ -1,4 +1,5 @@
 import re, sys, copy
+from collections import namedtuple
 
 # Read the input
 try:
@@ -59,5 +60,57 @@ while b < data_size:
 print(f"Part 1: The filesystem checksum is: {checksum}")
 
 # Part 2: Now attempt to move whole files in descending order by file ID and recompute the checksum.
-# I think I'm going to have to effectively regenerate the input list for this.
+# I think I'm going to just simulate the whole disk. There's probably a more efficient way but I used
+# to like watching disks defragment so this way is more fun.
+Region = namedtuple('Region', ['addr', 'size'])
 
+files = {}
+empties = []
+disk = []
+b = 0
+
+for f in range(num_files - 1):
+	files[f] = Region(b, file_sizes[f])
+	for _ in range(file_sizes[f]):
+		disk.append(f)
+		b += 1
+	
+	if empty_sizes[f] > 0:
+		empties.append(Region(b, empty_sizes[f]))
+		for _ in range(empty_sizes[f]):
+			disk.append(-1)
+			b += 1
+
+files[num_files - 1] = Region(b, file_sizes[num_files - 1])
+for _ in range(file_sizes[num_files - 1]):
+	disk.append(num_files - 1)
+
+# Now we can defragment!
+for f in range(num_files - 1, 0, -1):
+	faddr = files[f].addr
+	fsize = files[f].size
+	
+	e = 0
+	while e < len(empties):
+		eaddr = empties[e].addr
+		esize = empties[e].size
+		
+		if esize >= fsize and eaddr < faddr:
+			for b in range(fsize):
+				disk[eaddr + b] = disk[faddr + b]
+				disk[faddr + b] = -1
+			files[f] = Region(eaddr, fsize)
+			if esize - fsize == 0:
+				del empties[e]
+			else:
+				empties[e] = Region(eaddr + fsize, esize - fsize)
+			break
+		else:
+			e += 1
+
+# And... SCORE!
+checksum = 0
+for b in range(disk_size):
+	if disk[b] >= 0:
+		checksum += b * disk[b]
+print(f"Part 2: The filesystem checksum is: {checksum}")
