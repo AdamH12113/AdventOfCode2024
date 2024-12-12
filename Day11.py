@@ -38,12 +38,39 @@ def update_stones(stones):
 	return [new_stone for new_group in new_groups for new_stone in new_group]
 
 stones = copy.deepcopy(starting_stones)
-print(stones)
-for _ in range(75):
+for _ in range(25):
 	stones = update_stones(stones)
-	print(len(stones))
 print(f"Part 1: After 25 blinks, the number of stones is: {len(stones)}")
 
-# Part 2: How many stones are there after 75 blinks?
+# Part 2: How many stones are there after 75 blinks? Obviously there's no brute-forcing this one;
+# the list gets too big. Maybe a depth-first approach will work.
+#
+# Nope, didn't work. Better idea: depth-first with a result cache!
+cache = {}
 
+def count_stones(num, remaining_blinks):
+	if remaining_blinks == 0:
+		return 1
 
+	cache_key = (num, remaining_blinks)
+	if cache_key in cache:
+		return cache[(num, remaining_blinks)]
+
+	strnum = str(num)
+	num_digits = len(strnum)
+	
+	if num == 0:
+		result = count_stones(1, remaining_blinks - 1)
+	elif num_digits % 2 == 0:
+		result = (count_stones(int(strnum[:num_digits//2]), remaining_blinks - 1) +
+		          count_stones(int(strnum[num_digits//2:]), remaining_blinks - 1))
+	else:
+		result = count_stones(2024 * num, remaining_blinks - 1)
+	
+	cache[cache_key] = result
+	return result
+
+total_stones = 0
+for stone in starting_stones:
+	total_stones += count_stones(stone, 75)
+print(f"Part 2: After 75 blinks, the number of stones is: {total_stones}")

@@ -1,4 +1,5 @@
 import re, sys, copy
+from functools import cmp_to_key
 
 # Read the input
 try:
@@ -38,6 +39,32 @@ for update in updates:
 	if update_is_valid(update, rules):
 		total += update[len(update) // 2]
 print(f"Part 1: The sum of the middle page numbers of the valid updates is: {total}")
+
+# Part 2: For the invalid updates, sort them using the page number rules until they're valid, then
+# sum the middle numbers of the formerly-invalid updates. The puzzle description is a bit fuzzy on
+# what I'm supposed to do with numbers that aren't affected by the rules, so I'm going to try a
+# stable sort (the default kind in Python) and hope that's what the author wants.
+def compare(page1, page2):
+	for first_page, second_page in rules:
+		if page1 == first_page and page2 == second_page:
+			return -1
+		if page2 == first_page and page1 == second_page:
+			return 1
+	return 0
+
+invalid_updates = [update for update in updates if not update_is_valid(update, rules)]
+total = 0
+for update in invalid_updates:
+	sorted_update = sorted(update, key = cmp_to_key(compare))
+	total += sorted_update[len(sorted_update) // 2]
+print(f"Part 2: The sum of the middle page numbers of the sorted invalid updates is: {total}")
+
+
+
+
+
+
+
 
 
 
