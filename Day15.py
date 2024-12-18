@@ -1,6 +1,6 @@
 import re, sys, copy, os
 from collections import namedtuple
-from Vector import Vector
+from Vector import Vector, null
 
 # Read the input
 try:
@@ -24,7 +24,7 @@ moves_text = ''.join(parts[1].split('\n'))
 size = len(grid_text)
 
 walls = set()
-boxes = set()
+init_boxes = set()
 start = Vector(0, 0)
 for x in range(size):
 	for y in range(size):
@@ -32,22 +32,52 @@ for x in range(size):
 		if char == '#':
 			walls.add(Vector(x, y))
 		elif char == 'O':
-			boxes.add(Vector(x, y))
+			init_boxes.add(Vector(x, y))
 		elif char == '@':
 			start = Vector(x, y)
 
 moves = []
 for char in moves_text:
-	if c == '<':
+	if char == '<':
 		moves.append(Vector(-1, 0))
-	elif c == '>':
+	elif char == '>':
 		moves.append(Vector(1, 0))
-	elif c == '^':
+	elif char == '^':
 		moves.append(Vector(0, -1))
-	elif c == 'v':
+	elif char == 'v':
 		moves.append(Vector(0, 1))
 
+# Part 1: After the robot finishes moving, find the sum of the Y coordinates times 100 plus the sum
+# of the X coordinates. Any number of boxes can be pushed at once but boxes cannot go through other
+# boxes or through walls. Just for fun, let's do this recursively.
+def move_box(loc, boxes, dir):
+	if loc + dir in walls:
+		rdir = null
+	elif loc + dir in boxes:
+		rdir = move_box(loc + dir, boxes, dir)
+	else:
+		rdir = dir
 
+	boxes.remove(loc)
+	boxes.add(loc + rdir)
+	return rdir
+
+robot = start
+boxes = copy.deepcopy(init_boxes)
+for move in moves:
+	if robot + move in walls:
+		continue
+	elif robot + move not in boxes:
+		robot += move
+	else:
+		rdir = move_box(robot + move, boxes, move)
+		robot += rdir
+
+score = sum(100*b.y + b.x for b in boxes)
+print(f"Part 1: The sum of the coordinates is: {score}")
+
+# Part 2: All boxes and walls now have double the width. It is now possible for a box pushed by the
+# robot to push two other boxes at once. What's the score now?
 
 
 
