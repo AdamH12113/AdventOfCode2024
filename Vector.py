@@ -23,6 +23,9 @@ class Vector:
 
 	def __rmul__(self, c: int) -> Self:
 		return self * c
+	
+	def __abs__(self) -> int:
+		return abs(self.x) + abs(self.y)
 
 	def __str__(self) -> str:
 		return f"({self.x},{self.y})"
@@ -60,6 +63,9 @@ class Vector3:
 
 	def __rmul__(self, c: int) -> Self:
 		return self * c
+	
+	def __abs__(self) -> int:
+		return abs(self.x) + abs(self.y) + abs(self.z)
 
 	def __str__(self) -> str:
 		return f"({self.x},{self.y},{self.z})"
