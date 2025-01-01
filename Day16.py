@@ -57,9 +57,32 @@ min_cost = min(costs[cost] for cost in costs if cost.coords == end)
 print(f"Part 1: The minimum cost to reach the exit is: {min_cost}")
 
 # Part 2: How many tiles are part of at least one of the best paths through the maze? I think we can
-# do this by following the costs from highest to lowest. If the cost of getting to an adjacent node
-# is the lowest cost of the current node minus the mimimum movement needed to get to that node, then
-# the adjacent node should be on the path.
+# do this by following the costs from highest to lowest, although we still need to take direction
+# into account.
+def find_min_loc_cost(loc):
+	cost_nodes = [CostNode(loc, dir) for dir in (up, down, left, right)]
+	node_costs = [costs[node] for node in cost_nodes if node in costs]
+	if len(node_costs) == 0:
+		return sys.maxsize
+	else:
+		return min(node_costs)
 
+best_end_dir = [cost_node.dir for cost_node in costs if costs[cost_node] == min_cost][0]
+queue = [CostNode(end, best_end_dir)]
+visited = set([end, start])
 
+while len(queue) > 0:
+	loc_cost_node = queue.pop()
+	loc, exit_dir = loc_cost_node
+	loc_cost = costs[loc_cost_node]
+	
+	for dir in (up, down, left, right):
+		new_loc = loc + dir
+		new_loc_cost_node = CostNode(new_loc, -dir)
+		new_loc_cost = costs[new_loc_cost_node] if new_loc_cost_node in costs else sys.maxsize
+		
+		if new_loc not in walls and new_loc not in visited and new_loc_cost < loc_cost:
+			visited.add(new_loc)
+			queue.insert(0, new_loc_cost_node)
 
+print(f"Part 2: The number of tiles on a best path is: {len(visited)}")
