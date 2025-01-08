@@ -33,10 +33,10 @@ numeric = {
 	'A': 2*right
 }
 directional = {
-	'L': null,
-	'D': right,
-	'U': right + up,
-	'R': 2*right,
+	'<': null,
+	'v': right,
+	'^': right + up,
+	'>': 2*right,
 	'A': 2*right + up
 }
 
@@ -46,13 +46,85 @@ directional = {
 # the numeric keypad and multiply that by the numeric part of the code. Each robot starts out
 # pointing at the A button on its keypad. There are gaps in the keypad layout (lower left on the
 # numeric pad and upper left on the directional pad) that the robot is not allowed to point at.
+#
+# I think a key feature of this puzzle is that to push a button on the numeric keypad, all of the
+# directional keypads need to be pressing A at the same time. Likewise, to press a button on the
+# first directional keypad, the higher keypads all need to press A at the same time. So it's
+# recursive, like the Towers of Hanoi. (Maybe part 2 will make me do ten levels of indirection!)
+def dx_to_directions(dx):
+	char = '<' if dx < 0 else '>'
+	return abs(dx) * char
+def dy_to_directions(dy):
+	char = 'v' if dy < 0 else '^'
+	return abs(dy) * char
+
+def numeric_press_to_directions(start, end):
+	cs = numeric[start]
+	ce = numeric[end]
+	dxd = dx_to_directions(ce.x - cs.x)
+	dyd = dy_to_directions(ce.y - cs.y)
+	
+	if cs.x == 0 and ce.y == 0:
+		return dxd + dyd + 'A'
+	elif cs.y == 0 and ce.x == 0:
+		return dyd + dxd + 'A'
+	elif ce.x > cs.x:
+		return dyd + dxd + 'A'
+	else:
+		return dxd + dyd + 'A'
+
+def directional_press_to_directions(start, end):
+	cs = directional[start]
+	ce = directional[end]
+	dxd = dx_to_directions(ce.x - cs.x)
+	dyd = dy_to_directions(ce.y - cs.y)
+
+	if cs.x == 0 and ce.y == 1:
+		return dxd + dyd + 'A'
+	elif cs.y == 1 and ce.x == 0:
+		return dyd + dxd + 'A'
+	elif ce.x > cs.x:
+		return dyd + dxd + 'A'
+	else:
+		return dxd + dyd + 'A'
+
+def code_to_directions(code):
+	seq = 'A' + code
+	dirs = []
+	for c1 in range(len(seq) - 1):
+		dirs.append(numeric_press_to_directions(seq[c1], seq[c1 + 1]))
+	return ''.join(dirs)
+
+def dirs_to_directions(dirs):
+	seq = 'A' + dirs
+	new_dirs = []
+	for c1 in range(len(seq) - 1):
+		new_dirs.append(directional_press_to_directions(seq[c1], seq[c1 + 1]))
+	return ''.join(new_dirs)
+
+score = 0
+for code in codes:
+	m1 = code_to_directions(code)
+	m2 = dirs_to_directions(m1)
+	m3 = dirs_to_directions(m2)
+	score += int(code[:3]) * len(m3)
+print(f"Part 1: The total complexity is: {score}")
+
+# Part 2: Now there are 25 robot-controlled directional keypads between me and the numeric keypad.
+# (Called it!) What is the sum of the complexities now? Clearly we need a more efficient algorithm.
+
+score = 0
+for code in codes:
+	m = code_to_directions(code)
+	for _ in range(25):
+		print(_)
+		m = dirs_to_directions(m)
+	score += int(code[:3]) * len(m)
+	print(score)
+print(f"Part 2: The total complexity is: {score}")
 
 
-
-
-
-
-
+# 118392478819140
 
 
 
