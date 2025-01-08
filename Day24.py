@@ -58,36 +58,49 @@ print(f"Part 1: The output value is: {outval}")
 
 # Part 2: Four pairs of gates have had their output wires swapped, preventing the system from
 # correctly producing the sum of the xnn and ynn wires. Find the swapped wires and list their
-# names alphabetically separated by commas. Since this is a binary adder, I can try each bit
-# one at a time to narrow down which gates are involved.
-def run_gates(input_gates, x, y):
-	xb = {f'x{n:02}': (x // 2**n) & 1 for n in range(num_bits)}
-	yb = {f'y{n:02}': (y // 2**n) & 1 for n in range(num_bits)}
-	solved = solve_gates(input_gates, xb | yb)
-	z = sum(solved[f'z{n:02}'] * 2**n for n in range(num_bits))
-	return z % 2**num_bits
+# names alphabetically separated by commas. After trying and failing to use test vectors to
+# identify bad gates, I think the easiest thing to do is to identify the gates for each bit.
+# The first bits are added with a half adder:
+#
+#  z00 = x00 xor y00
+#  co00 = x00 and y00
+#
+# Subsequent bits are added with full adders. Note that the final sum's carry out is used to
+# produce an extra output bit!
+#
+#  sn = xn xor yn
+#  csn = xn and yn
+#  zn = sn xor cin
+#  cscn = sn and cin
+#  con = csn or cscn
+#
+# With this, we can identify each gate and try to check the connections.
+def find_gate(input1, input2, gate_type, input_gates):
+	for gate in input_gates:
+		a = input_gates[gate].a
+		b = input_gates[gate].b
+		op = input_gates[gate].op
+		if (a == input1 or b == input1 or not input1) and (a == input2 or b == input2 or not input2) and op == gate_type:
+			return gate
+	#print(f"Couldn't find gate: {input1} {gate_type.__name__} {input2}")
+	return None
 
-def check_bit(input_gates, bit):
-	try:
-		mask = 2**bit
-		ci_mask = mask >> 1
-		all_ones = 2**num_bits - 1
-		inv_mask = all_ones ^ mask
-		inv_ci_mask = all_ones ^ ci_mask
-		zx = run_gates(input_gates, mask, 0)
-		zy = run_gates(input_gates, 0, mask)
-		zci = run_gates(input_gates, ci_mask, ci_mask)
-		zco = run_gates(input_gates, mask, mask)
-		inv_zx_bit = run_gates(input_gates, inv_mask, 0) & mask
-		inv_zy_bit = run_gates(input_gates, 0, inv_mask) & mask
-		inv_zc_bit = run_gates(input_gates, inv_ci_mask, inv_ci_mask) & mask
-	except Exception as e:
-		return False
-	if zx != mask or zy != mask or zci != ci_mask + ci_mask or zco != (mask + mask) % 2**num_bits:
-		return False
-	if inv_zx_bit != 0 or inv_zy_bit != 0 or inv_zc_bit != 0:
-		return False
-	return True
+def check_gates_for_bit(bit, input_gates):
+	ns = f'{n:02}'
+	s = find_gate('x' + ns, 'y' + ns, XOR, input_gates)
+	cs = find_gate('x' + ns, 'y' + ns, AND, input_gates)
+	z = 'z' + ns
+	if input_gates[z].op != XOR:
+		print(f"Bit {bit} Z gate has wrong type! {input_gates[z].a} {input_gates[z].op.__name__} {input_gates[z].b}")
+	if input_gates[z].a != s and input_gates[z].b != s:
+		print(f"Bit {bit} S gate misdirected! Z inputs were {input_gates[z].a} and {input_gates[z].b}")
+	ci = input_gates[z].a if input_gates[z].a != s else input_gates[z].b
+	csc = find_gate(s, ci, AND, input_gates)
+	if not csc:
+		print(f"Bit {bit} CSC gate has bad inputs! {s} and {ci}")
+	co = find_gate(cs, csc, OR, input_gates)
+	if not co:
+		print(f"Bit {bit} CO gate has bad inputs! {cs} and {csc}")
 
 def swap_signals(input_gates, sig1, sig2):
 	new_gates = copy.deepcopy(input_gates)
@@ -96,29 +109,16 @@ def swap_signals(input_gates, sig1, sig2):
 	new_gates[sig2] = temp
 	return new_gates
 
-gate_names = list(gates.keys())
-for n in range(35, num_bits):
-	print(f"Bit {n}")
-	bit_good = check_bit(gates, n)
-	if not bit_good:
-		for g1 in range(len(gate_names) - 1):
-			for g2 in range(g1+1, len(gate_names)):
-				new_gates = swap_signals(gates, gate_names[g1], gate_names[g2])
-				bit_good = check_bit(new_gates, n)
-				if bit_good:
-					print(f"Would swap {gate_names[g1]} and {gate_names[g2]}")
-					break
-			if bit_good:
-				break
-
-
-# qdr, z16 (or fmr, z16)
-# fhn, fmr?
-# jbk, qgq
-# tpc, rvf (or pwm, tpc)
-
-# Tried fhn,fmr,jbk,qdr,qgq,rvf,tpc,z16
-
-
-
-
+# I found these manually, print()ing out connections for suspicious-looking gates and swapping
+# them until the bit passed the gate check. It turned out that all of the swaps were localized
+# to individual full adder circuits.
+ng = swap_signals(gates, 'z16', 'hmk')
+ng = swap_signals(ng, 'z20', 'fhp')
+ng = swap_signals(ng, 'rvf', 'tpc')
+ng = swap_signals(ng, 'z33', 'fcd')
+for n in range(1, num_bits):
+	check_gates_for_bit(n, ng)
+	
+swap_list = ['z16', 'hmk', 'z20', 'fhp', 'rvf', 'tpc', 'z33', 'fcd']
+result = ','.join(sorted(swap_list))
+print(f"Part 2: The list of swapped gates is: {result}")
