@@ -63,7 +63,7 @@ def numeric_press_to_directions(start, end):
 	ce = numeric[end]
 	dxd = dx_to_directions(ce.x - cs.x)
 	dyd = dy_to_directions(ce.y - cs.y)
-	
+
 	if cs.x == 0 and ce.y == 0:
 		return dxd + dyd + 'A'
 	elif cs.y == 0 and ce.x == 0:
@@ -112,19 +112,26 @@ print(f"Part 1: The total complexity is: {score}")
 
 # Part 2: Now there are 25 robot-controlled directional keypads between me and the numeric keypad.
 # (Called it!) What is the sum of the complexities now? Clearly we need a more efficient algorithm.
+cache = {}
+def count_keypresses(code, depth = 1):
+	if depth == 25:
+		return len(dirs_to_directions(code))
+
+	if (code, depth) in cache:
+		return cache[code, depth]
+
+	# All codes end with A, which causes split() to add an extra empty string to the end of the list
+	total = 0
+	new_codes = code.split('A')[:-1]
+	for nc in new_codes:
+		total += count_keypresses(dirs_to_directions(nc + 'A'), depth + 1)
+
+	cache[code, depth] = total
+	return total
 
 score = 0
 for code in codes:
 	m = code_to_directions(code)
-	for _ in range(25):
-		print(_)
-		m = dirs_to_directions(m)
-	score += int(code[:3]) * len(m)
-	print(score)
+	length = count_keypresses(m, 1)
+	score += int(code[:3]) * length
 print(f"Part 2: The total complexity is: {score}")
-
-
-# 118392478819140
-
-
-
